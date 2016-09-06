@@ -146,12 +146,15 @@ public final class MessageParser {
      * 
      * @param msgData message data to parse
      * @return DPA message, which corresponds to {@code msgData}
-     * @throws com.microrisc.jiqrfdpa.v22x.MessageParserException 
-     *         if some error occured during parsing
+     * @throws com.microrisc.dpa22x.MessageParserException
      */
     public static DPA_Message parse(short[] msgData) throws MessageParserException {
-        // type of the incomming message
-        MessageType msgType = ProtocolProperties.getMessageType(msgData);
+        MessageType msgType = null;
+        try {
+            msgType = ProtocolProperties.getMessageType(msgData);
+        } catch ( IllegalStateException ex ) {
+            throw new MessageParserException("Error in retrieving message type:" + ex);
+        }
         
         switch ( msgType ) {
             case CONFIRMATION:

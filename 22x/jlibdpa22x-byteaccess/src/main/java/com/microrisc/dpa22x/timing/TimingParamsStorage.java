@@ -399,7 +399,7 @@ public final class TimingParamsStorage {
         
         MutableTimingParams mutTimingParams = timingParamsMap.get(perNum);
         if ( mutTimingParams == null ) {
-            logger.warn("getTimingParams: not found timing params for peripheral {}", perNum);
+            logger.info("getTimingParams: not found timing params for peripheral {}", perNum);
             logger.debug("getTimingParams - end: null");
             return null;
         }

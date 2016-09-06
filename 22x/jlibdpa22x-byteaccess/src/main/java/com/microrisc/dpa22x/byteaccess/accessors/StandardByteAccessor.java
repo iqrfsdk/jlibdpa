@@ -275,7 +275,22 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
                     
                     short[] data = dataFromNetwork.poll();
                     
-                    MessageType msgType = ProtocolProperties.getMessageType(data);
+                    MessageType msgType = null;
+                    try {
+                        msgType = ProtocolProperties.getMessageType(data);
+                    } catch ( IllegalStateException ex ) {
+                        // unknown type of message
+                        logger.error("Unknown type of message: {}", Arrays.toString(data));
+
+                        requestResult = new RequestResult(
+                                RequestResult.Status.ERROR, null, 
+                                new ProcessingInfo( new NetworkInternalError(
+                                        "Unknown type of message: " + Arrays.toString(data)) 
+                                )
+                        );
+                        break;
+                    }
+                    
                     switch ( msgType ) {
                         case CONFIRMATION:
                             if ( waitForConfirmation ) {

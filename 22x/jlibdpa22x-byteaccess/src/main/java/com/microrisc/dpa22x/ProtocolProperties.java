@@ -15,6 +15,8 @@
  */
 package com.microrisc.dpa22x;
 
+import java.util.Arrays;
+
 /**
  * Properties of IQRF DPA protocol.
  * According to IQRF DPA v2.27.
@@ -56,6 +58,7 @@ public final class ProtocolProperties {
     
     /** DPA Value position. */
     public static final int DPA_VALUE_POS = FOURSOME_LENGTH + 1;
+    
     
     
     // CONFIRMATION 
@@ -178,12 +181,15 @@ public final class ProtocolProperties {
      * 
      * @param message message from network
      * @return type of specified message
+     * @throws IllegalStateException if the message type in unknown
      */
     public static MessageType getMessageType(short[] message) {
-        if ( message.length >= RESPONSE_CODE_POS ) {
+        int minMsgLength = ((DPA_VALUE_POS + 1) > CONFIRMATION_LENGTH )? 
+                (DPA_VALUE_POS + 1) : CONFIRMATION_LENGTH;
+        if ( message.length < minMsgLength ) {
             throw new IllegalArgumentException(
                     "Bad message length. "
-                    + "Expected at least: " + RESPONSE_CODE_POS
+                    + "Expected at least: " + minMsgLength
                     + ", got: " + message.length
             );
         }
@@ -193,8 +199,12 @@ public final class ProtocolProperties {
             return MessageType.CONFIRMATION;
         }
         
-        // check, if there is flag
-        return MessageType.RESPONSE;
+        int command = getCommand(message);
+        if ( (command & 0x80) == 0x80 ) {
+            return MessageType.RESPONSE;
+        }
+        
+        throw new IllegalStateException("Unknown message type. Message: " + Arrays.toString(message));
     }
     
     /**
