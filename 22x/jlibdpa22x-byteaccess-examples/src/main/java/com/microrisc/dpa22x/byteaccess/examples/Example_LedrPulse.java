@@ -75,11 +75,9 @@ public final class Example_LedrPulse {
                 continue;
             }
             
-            // analyzing the result
+            // testing the result
             DPA_Response response = result.getResponse();
-            if ( response.getResponseCode() == DPA_ResponseCode.NO_ERROR ) {
-                System.out.println("Response: " + Arrays.toString( response.getData()));
-            } else {
+            if ( response.getResponseCode() != DPA_ResponseCode.NO_ERROR ) {
                 System.out.println("DPA error: " + response.getResponseCode());
             }
         }
