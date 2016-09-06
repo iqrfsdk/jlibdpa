@@ -1,0 +1,55 @@
+<configuration>
+    
+    <timestamp key="bySecond" datePattern="yyyyMMdd'T'HHmmss"/>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <!-- encoders are assigned the type ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{40}:%msg%n</pattern>
+            </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+            <file>jlibdpa22x-byteaccess-${bySecond}.log</file>
+            <append>false</append>
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{40}: %msg%n</pattern>
+            </encoder>
+    </appender>
+    
+    
+    <!-- timing  -->
+    <logger name="com.microrisc.dpa22x.timing.TimingParamsStorage" level="INHERITED">
+            <appender-ref ref="FILE" />
+    </logger>
+    
+    
+    <!-- accessors  -->
+    <logger name="com.microrisc.dpa22x.byteaccess.accessors.StandardByteAccessor" level="INHERITED">
+            <appender-ref ref="FILE" />
+    </logger>
+    
+    
+    <!-- network layer  -->
+    <logger name="com.microrisc.dpa22x.byteaccess.network.AbstractNetworkLayer" level="INHERITED">
+            <appender-ref ref="FILE" />
+    </logger>
+    
+    <logger name="com.microrisc.dpa22x.byteaccess.network.cdc.CdcNetworkLayer" level="INHERITED">
+            <appender-ref ref="FILE" />
+    </logger>
+    
+    <logger name="com.microrisc.dpa22x.byteaccess.network.udp.UdpNetworkLayer" level="INHERITED">
+            <appender-ref ref="FILE" />
+    </logger>
+    
+    <logger name="com.microrisc.dpa22x.byteaccess.network.udp.UdpNetworkLayerFactory" level="INHERITED">
+            <appender-ref ref="FILE" />
+    </logger>
+
+
+    <!-- root -->
+    <root level="debug">
+        <!-- appender-ref ref="STDOUT" / -->
+    </root>
+</configuration>
