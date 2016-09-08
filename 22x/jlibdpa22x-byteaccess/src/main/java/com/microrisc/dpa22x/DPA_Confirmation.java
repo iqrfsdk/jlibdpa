@@ -15,6 +15,8 @@
  */
 package com.microrisc.dpa22x;
 
+import java.util.Arrays;
+
 /**
  * DPA Response.
  * 
@@ -86,6 +88,25 @@ public final class DPA_Confirmation extends DPA_Message {
      */
     public short getHopsResponse() {
         return hopsResponse;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder strBuilder = new StringBuilder();
+        String NEW_LINE = System.getProperty("line.separator");
+        
+        strBuilder.append(this.getClass().getSimpleName() + " { " + NEW_LINE);
+        strBuilder.append(" NADR: " + Arrays.toString(nadr) + NEW_LINE);
+        strBuilder.append(" PNUM: " + pnum + NEW_LINE);
+        strBuilder.append(" PCMD: " + pcmd + NEW_LINE);
+        strBuilder.append(" HWP ID: " + Arrays.toString(hwpid) + NEW_LINE);
+        strBuilder.append(" DPA value: " + dpaValue + NEW_LINE);
+        strBuilder.append(" Hops: " + hops + NEW_LINE);
+        strBuilder.append(" Timeslot length: " + timeslotLength + NEW_LINE);
+        strBuilder.append(" Hops response: " + hopsResponse + NEW_LINE);
+        strBuilder.append("}");
+        
+        return strBuilder.toString();
     }
     
 }

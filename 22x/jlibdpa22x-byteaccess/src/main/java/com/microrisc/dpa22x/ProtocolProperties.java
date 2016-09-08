@@ -184,7 +184,7 @@ public final class ProtocolProperties {
      * @throws IllegalStateException if the message type in unknown
      */
     public static MessageType getMessageType(short[] message) {
-        int minMsgLength = ((DPA_VALUE_POS + 1) > CONFIRMATION_LENGTH )? 
+        int minMsgLength = ((DPA_VALUE_POS + 1) < CONFIRMATION_LENGTH )? 
                 (DPA_VALUE_POS + 1) : CONFIRMATION_LENGTH;
         if ( message.length < minMsgLength ) {
             throw new IllegalArgumentException(

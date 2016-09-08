@@ -36,6 +36,7 @@ import com.microrisc.dpa22x.timing.WaitingTimeCounter;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -235,27 +236,53 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
         DPA_Confirmation confirmation = null;
         long confirmationRecvTime = TIME_NOT_DEFINED;
         RequestResult requestResult = null;
+        long startTime = 0;
+        double timeElapsed = 0.0;
         
         // waiting for message from network
-        synchronized( syncResponse ) {
-            while ( dataFromNetwork.isEmpty() ) {
-                try {
-                    if ( isLongLastingOperationInProgress ) {
-                        if ( waitingTimeout == ByteAccessor.WAITING_TIMEOUT_NOT_LIMITED ) {
-                            timeToWait = 0;
-                        } else {
-                            timeToWait = waitingTimeout;
+        synchronized ( syncResponse ) {
+            while ( requestResult == null ) {
+                boolean timeoutElapsed = false;
+                boolean continueToWait = false;
+                
+                // waiting until some data has come into or timout has elapsed
+                while ( dataFromNetwork.isEmpty() && !timeoutElapsed ) {
+                    if ( !continueToWait ) {
+                        if ( isLongLastingOperationInProgress ) {
+                            if ( waitingTimeout == ByteAccessor.WAITING_TIMEOUT_NOT_LIMITED ) {
+                                timeToWait = 0;
+                            } else {
+                                timeToWait = waitingTimeout;
+                            }
                         }
                     }
                     
-                    long startTime = System.nanoTime();
-                    syncResponse.wait(timeToWait);
-                    double timeElapsed = (System.nanoTime() - startTime) * NANOSEC_TO_MILISEC;
+                    System.out.println("Time to wait: " + timeToWait);
+                    startTime = System.nanoTime();
+                    try {
+                        syncResponse.wait(timeToWait);
+                    } catch (InterruptedException ex ) {
+                        logger.warn("Waiting for data from network interrupted: {}", ex);
                     
-                    if ( waitingTimeout != ByteAccessor.WAITING_TIMEOUT_NOT_LIMITED ) {
+                        requestResult = new RequestResult(
+                                RequestResult.Status.ERROR, null, 
+                                new ProcessingInfo( new ReceiveDataError(
+                                        "Waiting for data interrupted.") 
+                                )
+                        );
+                    }
+                    
+                    timeElapsed = (System.nanoTime() - startTime) * NANOSEC_TO_MILISEC;
+                    System.out.println("Time elapsed: " + timeElapsed);
+                    
+                    if ( !isLongLastingOperationInProgress 
+                        || ( waitingTimeout != ByteAccessor.WAITING_TIMEOUT_NOT_LIMITED )
+                    ) {
+                        
+                        timeToWait -= timeElapsed;
                         
                         // waiting for message timeouted
-                        if ( timeElapsed >= timeToWait ) {
+                        if ( timeToWait <= 0 ) {
                             logger.warn("Waiting for data from network timeouted ");
 
                             requestResult = new RequestResult(
@@ -264,21 +291,114 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
                                             "Waiting for data timeouted.") 
                                     )
                             );
-                            break;
+                            timeoutElapsed = true;
+                        } else {
+                            continueToWait = true;
                         }
                     }
+                }
+                
+                // if timeout has elapsed break and return request result
+                if ( timeoutElapsed ) {
+                    break;
+                }
+                
+                short[] data = dataFromNetwork.poll();
                     
-                    // for spurious wake-up reason
-                    if ( dataFromNetwork.isEmpty() ) {
-                        continue;
-                    }
+                MessageType msgType = null;
+                try {
+                    msgType = ProtocolProperties.getMessageType(data);
+                } catch ( IllegalStateException ex ) {
+                    // unknown type of message
+                    logger.error("Unknown type of message: {}", Arrays.toString(data));
+
+                    requestResult = new RequestResult(
+                            RequestResult.Status.ERROR, null, 
+                            new ProcessingInfo( new NetworkInternalError(
+                                    "Unknown type of message: " + Arrays.toString(data)) 
+                            )
+                    );
+                    break;
+                }
                     
-                    short[] data = dataFromNetwork.poll();
-                    
-                    MessageType msgType = null;
-                    try {
-                        msgType = ProtocolProperties.getMessageType(data);
-                    } catch ( IllegalStateException ex ) {
+                switch ( msgType ) {
+                    case CONFIRMATION:
+                        if ( waitForConfirmation ) {
+                            waitForConfirmation = false;
+
+                            try {
+                                confirmation = (DPA_Confirmation) MessageParser.parse(data);
+                            } catch ( Exception ex ) {
+                                logger.error("Error in parsing confirmation: {}", ex);
+
+                                requestResult = new RequestResult(
+                                    RequestResult.Status.ERROR, null,
+                                    new ProcessingInfo( new ReceiveDataError(ex) ) 
+                                );
+                                break;
+                            }
+
+                            logger.info("Confirmation successfully received: {}", confirmation);
+
+                            confirmationRecvTime = startTime + (long)timeElapsed;
+
+                            if ( isLongLastingOperation(request) ) {
+                                isLongLastingOperationInProgress = true;
+                            } else {
+                                timeToWait = waitingTimeCounter
+                                        .getTimeToWaitForResponse(
+                                                request, confirmation, 
+                                                timingParamsStorage.getTimingParams(request)
+                                        );
+                            }
+                        } else {
+                            // unexpected confirmation
+                            logger.error("Unexpected confirmation: {}", Arrays.toString(data));
+
+                            requestResult = new RequestResult(
+                                    RequestResult.Status.ERROR, null, 
+                                    new ProcessingInfo( new NetworkInternalError(
+                                            "Unexpected confirmation: " + Arrays.toString(data)) 
+                                    )
+                            );
+                        }
+                        break;
+                    case RESPONSE:
+                        if ( waitForConfirmation ) {
+                            // unexpected response
+                            logger.error("Unexpected response: {}", Arrays.toString(data));
+
+                            requestResult = new RequestResult(
+                                    RequestResult.Status.ERROR, null, 
+                                    new ProcessingInfo( new NetworkInternalError(
+                                        "Unexpected response: " + Arrays.toString(data)) 
+                                    )
+                            );
+                        } else {
+                            // response arrived
+                            DPA_Response response = null;
+                            try {
+                                response = (DPA_Response) MessageParser.parse(data);
+                            } catch ( Exception ex ) {
+                                logger.error("Error in parsing response: {}. Data: {}", ex, Arrays.toString(data));
+
+                                requestResult = new RequestResult(
+                                    RequestResult.Status.ERROR, null,
+                                    new ProcessingInfo( new ReceiveDataError(ex) ) 
+                                );
+                                break;
+                            }
+
+                            logger.info("Response successfully received: {}", response);
+
+                            requestResult = new RequestResult(
+                                    RequestResult.Status.SUCCESSFULLY_COMPLETED,
+                                    response,
+                                    new ProcessingInfo() 
+                            );
+                        }
+                        break;
+                    default:
                         // unknown type of message
                         logger.error("Unknown type of message: {}", Arrays.toString(data));
 
@@ -288,111 +408,6 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
                                         "Unknown type of message: " + Arrays.toString(data)) 
                                 )
                         );
-                        break;
-                    }
-                    
-                    switch ( msgType ) {
-                        case CONFIRMATION:
-                            if ( waitForConfirmation ) {
-                                waitForConfirmation = false;
-                                
-                                try {
-                                    confirmation = (DPA_Confirmation) MessageParser.parse(data);
-                                } catch ( Exception ex ) {
-                                    logger.error("Error in parsing confirmation: {}", ex);
-                                    
-                                    requestResult = new RequestResult(
-                                        RequestResult.Status.ERROR, null,
-                                        new ProcessingInfo( new ReceiveDataError(ex) ) 
-                                    );
-                                    break;
-                                }
-                                
-                                logger.info("Confirmation successfully received: {}", confirmation);
-                                
-                                confirmationRecvTime = startTime + (long)timeElapsed;
-                                
-                                if ( isLongLastingOperation(request) ) {
-                                    isLongLastingOperationInProgress = true;
-                                } else {
-                                    timeToWait = waitingTimeCounter
-                                            .getTimeToWaitForResponse(
-                                                    request, confirmation, 
-                                                    timingParamsStorage.getTimingParams(request)
-                                            );
-                                }
-                            } else {
-                                // unexpected confirmation
-                                logger.error("Unexpected confirmation: {}", Arrays.toString(data));
-                                
-                                requestResult = new RequestResult(
-                                        RequestResult.Status.ERROR, null, 
-                                        new ProcessingInfo( new NetworkInternalError(
-                                                "Unexpected confirmation: " + Arrays.toString(data)) 
-                                        )
-                                );
-                            }
-                            break;
-                        case RESPONSE:
-                            if ( waitForConfirmation ) {
-                                // unexpected response
-                                logger.error("Unexpected response: {}", Arrays.toString(data));
-                                
-                                requestResult = new RequestResult(
-                                        RequestResult.Status.ERROR, null, 
-                                        new ProcessingInfo( new NetworkInternalError(
-                                            "Unexpected response: " + Arrays.toString(data)) 
-                                        )
-                                );
-                            } else {
-                                // response arrived
-                                DPA_Response response = null;
-                                try {
-                                    response = (DPA_Response) MessageParser.parse(data);
-                                } catch ( Exception ex ) {
-                                    logger.error("Error in parsing response: {}. Data: {}", ex, Arrays.toString(data));
-                                    
-                                    requestResult = new RequestResult(
-                                        RequestResult.Status.ERROR, null,
-                                        new ProcessingInfo( new ReceiveDataError(ex) ) 
-                                    );
-                                    break;
-                                }
-                                
-                                logger.info("Response successfully received: {}", response);
-                                
-                                requestResult = new RequestResult(
-                                        RequestResult.Status.SUCCESSFULLY_COMPLETED,
-                                        response,
-                                        new ProcessingInfo() 
-                                );
-                            }
-                            break;
-                        default:
-                            // unknown type of message
-                            logger.error("Unknown type of message: {}", Arrays.toString(data));
-                            
-                            requestResult = new RequestResult(
-                                    RequestResult.Status.ERROR, null, 
-                                    new ProcessingInfo( new NetworkInternalError(
-                                            "Unknown type of message: " + Arrays.toString(data)) 
-                                    )
-                            );
-                    }
-                } catch ( InterruptedException e ) {
-                    logger.warn("Waiting for data from network interrupted: {}", e);
-                    
-                    requestResult = new RequestResult(
-                            RequestResult.Status.ERROR, null, 
-                            new ProcessingInfo( new ReceiveDataError(
-                                    "Waiting for data interrupted.") 
-                            )
-                    );
-                }
-                
-                // if request result is available, go out of loop
-                if ( requestResult != null ) {
-                    break;
                 }
             }
         }

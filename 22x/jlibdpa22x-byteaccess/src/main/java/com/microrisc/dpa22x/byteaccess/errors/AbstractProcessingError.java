@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Fs.
+ * Copyright 2016 MICRORISC s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,4 +80,13 @@ public abstract class AbstractProcessingError implements ProcessingError {
         return exception;
     }
     
+    @Override
+    public String toString() {
+        return ("{ " +
+                "error type=" + type +
+                ", description=" + description +
+                ", exception=" + exception + 
+                " }"
+        );
+    }
 }

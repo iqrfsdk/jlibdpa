@@ -24,7 +24,6 @@ import com.microrisc.dpa22x.byteaccess.RequestResult;
 import com.microrisc.dpa22x.byteaccess.accessors.ByteAccessor;
 import com.microrisc.dpa22x.peripherals.LEDR;
 import java.io.File;
-import java.util.Arrays;
 
 /**
  * Example of LEDR pulse on nodes.
@@ -59,26 +58,24 @@ public final class Example_LedrPulse {
         ledrRequest[ProtocolProperties.HWPID_START + 1] = 0xFF;
         
         // send requests for LEDR pulse
-        for ( short nodeId = 0x00; nodeId <= 0x0A; nodeId++ ) {
+        for ( short nodeId = 0x00; nodeId <= 0x01; nodeId++ ) {
             
             // set target node address
             ledrRequest[ProtocolProperties.NADR_START] = nodeId;
             
             RequestResult result = byteAccessor.sendRequest( ledrRequest );
-            if ( result.getStatus() == RequestResult.Status.ERROR ) {
+            if ( result.getStatus() == RequestResult.Status.SUCCESSFULLY_COMPLETED ) {
+                DPA_Response response = result.getResponse();
+                if ( response.getResponseCode() == DPA_ResponseCode.NO_ERROR ) {
+                    System.out.println("Node " + nodeId + ": request successfully completed");
+                } else {
+                    System.out.println("Node " + nodeId + ": " + response.getResponseCode() );
+                }
+            } else {
                 System.out.println(
-                    "Error occured during processing of the request: " 
+                    "Node " + nodeId + ": error occured during processing of the request: " 
                     + result.getProcessingInfo().getProcesssingError()
                 );
-                
-                // continue with next node
-                continue;
-            }
-            
-            // testing the result
-            DPA_Response response = result.getResponse();
-            if ( response.getResponseCode() != DPA_ResponseCode.NO_ERROR ) {
-                System.out.println("DPA error: " + response.getResponseCode());
             }
         }
         

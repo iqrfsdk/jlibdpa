@@ -15,6 +15,8 @@
  */
 package com.microrisc.dpa22x;
 
+import java.util.Arrays;
+
 /**
  * DPA Response.
  * 
@@ -73,5 +75,22 @@ public final class DPA_Response extends DPA_Message {
         return data;
     }
     
+    @Override
+    public String toString() {
+        StringBuilder strBuilder = new StringBuilder();
+        String NEW_LINE = System.getProperty("line.separator");
+        
+        strBuilder.append(this.getClass().getSimpleName() + " { " + NEW_LINE);
+        strBuilder.append(" NADR: " + Arrays.toString(nadr) + NEW_LINE);
+        strBuilder.append(" PNUM: " + pnum + NEW_LINE);
+        strBuilder.append(" PCMD: " + pcmd + NEW_LINE);
+        strBuilder.append(" HWP ID: " + Arrays.toString(hwpid) + NEW_LINE);
+        strBuilder.append(" Response code: " + dpaValue + NEW_LINE);
+        strBuilder.append(" DPA value: " + dpaValue + NEW_LINE);
+        strBuilder.append(" Data: " + Arrays.toString(data) + NEW_LINE);
+        strBuilder.append("}");
+        
+        return strBuilder.toString();
+    }
     
 }

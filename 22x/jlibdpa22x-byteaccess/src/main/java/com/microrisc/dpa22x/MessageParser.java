@@ -66,7 +66,7 @@ public final class MessageParser {
         
         // hwpid
         short[] hwpid = new short[ProtocolProperties.HWPID_LENGTH];
-        System.arraycopy(confirmData, ProtocolProperties.HWPID_START, addr, 0, ProtocolProperties.HWPID_LENGTH);
+        System.arraycopy(confirmData, ProtocolProperties.HWPID_START, hwpid, 0, ProtocolProperties.HWPID_LENGTH);
         
         return new DPA_Confirmation(
                 addr,
@@ -106,7 +106,7 @@ public final class MessageParser {
         
         // hwpid
         short[] hwpid = new short[ProtocolProperties.HWPID_LENGTH];
-        System.arraycopy(responseData, ProtocolProperties.HWPID_START, addr, 0, ProtocolProperties.HWPID_LENGTH);
+        System.arraycopy(responseData, ProtocolProperties.HWPID_START, hwpid, 0, ProtocolProperties.HWPID_LENGTH);
         
         // check, if the PCMD most significat bit is flagged
         if ( !isMostSignificantBitFlagged(responseData[ProtocolProperties.PCMD_POS]) ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Fs.
+ * Copyright 2016 MICRORISC s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package com.microrisc.dpa22x.byteaccess.errors;
 /**
  * Dispatch request error.
  * 
- * @author Fs
+ * @author Michal Konopa
  */
 public final class DispatchRequestError 
 extends AbstractProcessingError implements ProcessingError 
@@ -41,4 +41,15 @@ extends AbstractProcessingError implements ProcessingError
     public DispatchRequestError(String description, Exception exception) {
         super(ERROR_TYPE, description, exception);
     }
+    
+    /*
+    @Override
+    public String toString() {
+        return ("{ " +
+                "error type=" + ERROR_TYPE +
+                ", description=" + description +
+                ", exception=" + exception + 
+                " }"
+        );
+    }*/
 }
