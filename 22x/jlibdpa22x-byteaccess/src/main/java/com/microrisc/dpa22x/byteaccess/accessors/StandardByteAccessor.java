@@ -104,6 +104,7 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
                         previousRequestResult.getResponse().getData().length, 
                         prevRequestConfirmationRecvTime
                 );
+            //System.out.println("Time to wait for routing: " + timeToWait);
             Thread.sleep(timeToWait);
         }
         
@@ -257,7 +258,7 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
                         }
                     }
                     
-                    System.out.println("Time to wait: " + timeToWait);
+                    //System.out.println("Time to wait: " + timeToWait);
                     startTime = System.nanoTime();
                     try {
                         syncResponse.wait(timeToWait);
@@ -273,7 +274,7 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
                     }
                     
                     timeElapsed = (System.nanoTime() - startTime) * NANOSEC_TO_MILISEC;
-                    System.out.println("Time elapsed: " + timeElapsed);
+                    //System.out.println("Time elapsed: " + timeElapsed);
                     
                     if ( !isLongLastingOperationInProgress 
                         || ( waitingTimeout != ByteAccessor.WAITING_TIMEOUT_NOT_LIMITED )
@@ -340,7 +341,7 @@ implements ByteAccessorControlInterface, J_AsyncMsgListener, NetworkLayerListene
 
                             logger.info("Confirmation successfully received: {}", confirmation);
 
-                            confirmationRecvTime = startTime + (long)timeElapsed;
+                            confirmationRecvTime = (long)(startTime * NANOSEC_TO_MILISEC) + (long)timeElapsed;
 
                             if ( isLongLastingOperation(request) ) {
                                 isLongLastingOperationInProgress = true;

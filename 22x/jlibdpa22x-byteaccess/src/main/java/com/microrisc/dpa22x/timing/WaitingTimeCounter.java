@@ -409,8 +409,7 @@ public final class WaitingTimeCounter {
         long actualRespTimeslotLength = getTimeslotLength(reponseDataLength, rfMode, dctr);
         long timeToWait = 
             confirmRecvTime
-            +
-            (confirmation.getHops() + 1 ) * confirmation.getTimeslotLength() * 10
+            + (confirmation.getHops() + 1 ) * confirmation.getTimeslotLength() * 10
             + ( confirmation.getHopsResponse() + 1 ) * actualRespTimeslotLength  * 10
             - System.currentTimeMillis();
         

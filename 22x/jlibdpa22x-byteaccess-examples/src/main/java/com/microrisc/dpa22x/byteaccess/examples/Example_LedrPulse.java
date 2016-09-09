@@ -58,7 +58,7 @@ public final class Example_LedrPulse {
         ledrRequest[ProtocolProperties.HWPID_START + 1] = 0xFF;
         
         // send requests for LEDR pulse
-        for ( short nodeId = 0x00; nodeId <= 0x01; nodeId++ ) {
+        for ( short nodeId = 0x00; nodeId <= 0x02; nodeId++ ) {
             
             // set target node address
             ledrRequest[ProtocolProperties.NADR_START] = nodeId;
