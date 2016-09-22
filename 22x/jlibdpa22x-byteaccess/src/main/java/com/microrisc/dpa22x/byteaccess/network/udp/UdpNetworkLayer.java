@@ -220,9 +220,12 @@ public final class UdpNetworkLayer extends AbstractNetworkLayer {
                         logger.error("Error while getting data from message: {}", e.getMessage());
                         continue;
                     }
-
-                    if ( listener != null ) {
-                        listener.onGetData(userData);
+                    
+                    // we are interested only in asynchronous messages, not in GW own answers 
+                    if ( isAsync ) {
+                        if ( listener != null ) {
+                            listener.onGetData(userData);
+                        }
                     }
                 }
             }
