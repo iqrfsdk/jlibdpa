@@ -40,7 +40,7 @@ import org.slf4j.LoggerFactory;
 public final class CdcNetworkLayer
 extends AbstractNetworkLayer implements J_AsyncMsgListener {
     
-    //** Logger. */
+    /** Logger. */
     private static final Logger logger = LoggerFactory.getLogger(CdcNetworkLayer.class);
 
     private static String checkPortName(String portName) {
