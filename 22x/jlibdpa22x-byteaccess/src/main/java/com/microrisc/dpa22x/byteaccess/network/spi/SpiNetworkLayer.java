@@ -320,7 +320,7 @@ extends AbstractNetworkLayer {
         logger.debug("sendData - start: data={}", toHexString(data));
 
         try {
-            logger.info("Data will be sent to SPI...");
+            logger.info("Data will be sent to SPI ...");
             
             synchronized ( spiSynchro ) { 
                 boolean dataSent = false;
