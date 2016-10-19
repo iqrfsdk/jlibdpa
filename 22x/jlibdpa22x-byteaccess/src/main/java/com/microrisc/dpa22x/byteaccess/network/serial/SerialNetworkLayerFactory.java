@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.microrisc.dpa22x.byteaccess.network.spi;
+package com.microrisc.dpa22x.byteaccess.network.serial;
 
 import com.microrisc.dpa22x.byteaccess.network.NetworkLayer;
 import com.microrisc.dpa22x.byteaccess.network.NetworkLayerFactory;
@@ -21,37 +21,35 @@ import com.microrisc.dpa22x.byteaccess.network.NetworkLayerFactoryException;
 import org.apache.commons.configuration.Configuration;
 
 /**
- * SPI network layer factory.
+ * Serial network layer factory.
  * <p>
  * Configuration items: <br>
- * - <b>networkLayer.type.spi.portName</b>: SPI port name. 
+ * - <b>networkLayer.type.serial.portName</b>: serial port name. 
  *      If no such configuration key is found, exception is thrown.
- * - <b>networkLayer.type.spi.maxStatusRetries</b>: maximal number of status retries
- *      If no such configuration key is found, default value, as specified by 
- *      SpiNetworkLayer class, is used.
+ * - <b>networkLayer.type.serial.baudRate</b>: baud rate
+ *      If no such configuration key is found, exception is thrown.
  * 
  * @author Michal Konopa
  */
-public final class SpiNetworkLayerFactory implements NetworkLayerFactory {
+public final class SerialNetworkLayerFactory implements NetworkLayerFactory {
     
     @Override
     public NetworkLayer getNetworkLayer(Configuration configuration) throws NetworkLayerFactoryException {
         // port
-        String portName = configuration.getString("networkLayer.type.spi.portName", "");
+        String portName = configuration.getString("networkLayer.type.serial.portName", "");
         if ( portName.isEmpty() ) {
             throw new NetworkLayerFactoryException("Port name is missing.");
         }
         
-        // max status retries
-        String maxStatusRetries = configuration.getString("networkLayer.type.spi.maxStatusRetries", "");
+        // baud rate
+        String baudRateStr = configuration.getString("networkLayer.type.serial.baudRate", "");
+        if ( baudRateStr.isEmpty() ) {
+            throw new NetworkLayerFactoryException("Baud rate is missing.");
+        }
         
         try {
-            if ( maxStatusRetries.isEmpty() ) {
-                return new SpiNetworkLayer(portName);
-            }
-
-            int maxStatusRetriesInt = Integer.valueOf(maxStatusRetries);
-            return new SpiNetworkLayer(portName, maxStatusRetriesInt);
+            int baudRate = Integer.valueOf(baudRateStr);
+            return new SerialNetworkLayer(portName, baudRate);
         } catch ( Exception ex ) {
             throw new NetworkLayerFactoryException(ex);
         }   

@@ -283,11 +283,13 @@ extends AbstractNetworkLayer {
     }
     
     /**
-     * Creates new SPI network layer object.
+     * Creates new SPI Network Layer object.
      * 
      * @param portName SPI-port name for communication
      * @param maxStatusRetries maximal number of status retries, must be nonnegative
-     * @throws IllegalArgumentException if {@code maxStatusRetries} is less than 0
+     * @throws IllegalArgumentException if: <br>
+     *      - {@code portName} is {@code null} or empty <br>
+     *      - {@code maxStatusRetries} is less than 0
      */
     public SpiNetworkLayer(String portName, int maxStatusRetries) {
         this.portName = checkPortName(portName);
@@ -354,6 +356,8 @@ extends AbstractNetworkLayer {
         } catch ( InterruptedException ex ) {
             throw new NetworkLayerException(ex);
         }
+        
+        logger.debug("sendData - end");
     }
 
     @Override
